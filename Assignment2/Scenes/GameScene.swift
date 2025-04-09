@@ -8,7 +8,24 @@ struct PhysicsCategory {
     static let All: UInt32 = UInt32.max // Represents all objects
     static let Ship: UInt32 = 0b1 // Represents the player's ship
     static let Alien: UInt32 = 0b10 // Represents aliens
-    static let Gem: UInt32 = 0b11 // Represents gems
+    static let Gem: UInt32 = 0b100 // Represents gems
+    static let Bullet: UInt32 = 0b1000 // Use a unique bitmask for Bullet
+}
+
+// Bullet class to represent the bullets shot by the ship
+class Bullett: SKSpriteNode {
+    init() {
+        let texture = SKTexture(imageNamed: "bullet.png") // Your bullet image
+        super.init(texture: texture, color: .clear, size: texture.size())
+        
+        // Scale the bullet to make it smaller (e.g., 0.5 means half the original size)
+        self.xScale = 0.5
+        self.yScale = 0.5
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 }
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
@@ -56,12 +73,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     // Called when the scene is loaded into view
     override func didMove(to view: SKView) {
-        
         // Set up background image position and transparency
-        background.position = CGPoint(x: frame.size.width/2, y: frame.size.height/2)
+        background.position = CGPoint(x: frame.size.width / 2, y: frame.size.height / 2)
         background.alpha = 0.2 // Set the opacity of the background
         addChild(background) // Add background to the scene
-        
+
         // Set up label node and fade it in
         self.label = self.childNode(withName: "//MyGame") as? SKLabelNode
         if let label = self.label {
@@ -82,20 +98,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                                               SKAction.removeFromParent()])) // Remove it after fading
         }
 
-        // Create the player’s ship sprite
+        // Create the player’s ship sprite (sportNode)
         sportNode = SKSpriteNode(imageNamed: "ship.png")
-        sportNode?.position = CGPoint(x : 150, y : 150) // Place ship at (150, 150)
+        sportNode?.position = CGPoint(x: frame.size.width / 2, y: 100) // Place the ship at a starting position (centered horizontally)
         addChild(sportNode!) // Add the ship to the scene
-        
-        // Set up physics for the ship
+
+        // Set up physics for the ship (sportNode)
         physicsWorld.gravity = CGVector(dx: 0, dy: 0) // No gravity
-        physicsWorld.contactDelegate = self; // Set contact delegate for collision detection
-        sportNode?.physicsBody = SKPhysicsBody(circleOfRadius:(sportNode?.size.width)!/2) // Create a circular physics body around the ship
-        sportNode?.physicsBody?.isDynamic = true; // Enable physics simulation
+        physicsWorld.contactDelegate = self // Set contact delegate for collision detection
+        sportNode?.physicsBody = SKPhysicsBody(circleOfRadius: (sportNode?.size.width)! / 2) // Create a circular physics body around the ship
+        sportNode?.physicsBody?.isDynamic = true // Enable physics simulation
         sportNode?.physicsBody?.categoryBitMask = PhysicsCategory.Ship // Set the category to Ship
         sportNode?.physicsBody?.contactTestBitMask = PhysicsCategory.Alien // Detect collision with aliens
-        sportNode?.physicsBody?.collisionBitMask = PhysicsCategory.None // No collision with other objects
-        sportNode?.physicsBody?.usesPreciseCollisionDetection = true; // Use precise collision detection
+        sportNode?.physicsBody?.collisionBitMask = PhysicsCategory.None // No collision with other objects (e.g., gems or bullets)
+        sportNode?.physicsBody?.usesPreciseCollisionDetection = true // Use precise collision detection
 
         // Add actions to spawn gems and aliens
         run(SKAction.repeatForever(SKAction.sequence([SKAction.run(addGem5thObject), SKAction.wait(forDuration: 2.0)]))) // Add a gem every 2 seconds
@@ -197,6 +213,26 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             hScore.run(SKAction.fadeIn(withDuration: 2.0)) // Fade in the high score label
         }
     }
+    
+    // Function to shoot a bullet
+    func shootBullet() {
+        let bullet = Bullett() // Create a new bullet
+        bullet.position = sportNode!.position // Bullet starts at the ship's position
+        
+        // Add physics to the bullet for collision detection
+        bullet.physicsBody = SKPhysicsBody(rectangleOf: bullet.size) // Set physics body for the bullet
+        bullet.physicsBody?.isDynamic = true
+        bullet.physicsBody?.categoryBitMask = PhysicsCategory.None // Not colliding with anything except aliens
+        bullet.physicsBody?.contactTestBitMask = PhysicsCategory.Alien // Bullet will collide with aliens
+        bullet.physicsBody?.collisionBitMask = PhysicsCategory.None // No collision with other objects
+        
+        addChild(bullet) // Add the bullet to the scene
+        
+        // Move the bullet upwards and remove it when it goes off-screen
+        let moveUp = SKAction.moveBy(x: 0, y: self.size.height, duration: 2.0) // Move bullet up
+        let removeBullet = SKAction.removeFromParent() // Remove bullet from the scene
+        bullet.run(SKAction.sequence([moveUp, removeBullet])) // Execute the movement and removal
+    }
 
     // Detect collisions between different objects
     func didBegin(_ contact: SKPhysicsContact) {
@@ -204,23 +240,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         var secondBody : SKPhysicsBody
 
         // Ensure firstBody is always the smaller category
-        if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask{
+        if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask {
             firstBody = contact.bodyA
             secondBody = contact.bodyB
-        }else{
+        } else {
             firstBody = contact.bodyB
             secondBody = contact.bodyA
         }
 
-        // Handle collision between alien and ship
-        if ((firstBody.categoryBitMask & PhysicsCategory.Alien != 0) &&
-            (secondBody.categoryBitMask & PhysicsCategory.Ship != 0)){
-            shipCollideAlien(ship: firstBody.node as! SKSpriteNode, alien: secondBody.node as! SKSpriteNode)
+        // Bullet vs Alien collision
+        if firstBody.categoryBitMask & PhysicsCategory.Alien != 0 && secondBody.categoryBitMask & PhysicsCategory.Bullet != 0 {
+            if let alien = firstBody.node as? SKSpriteNode, let bullet = secondBody.node as? Bullet {
+                bullet.removeFromParent() // Remove bullet
+                alien.removeFromParent() // Remove alien
+
+                // Increase score
+                score += 1
+                self.lblScore?.text = "Score: \(score)" // Update score label
+            }
         }
-        // Handle collision between gem and ship
-        else if ((firstBody.categoryBitMask & PhysicsCategory.Gem != 0) &&
-            (secondBody.categoryBitMask & PhysicsCategory.Ship != 0)){
-            shipCollideGem(ship: secondBody.node as! SKSpriteNode, gem: firstBody.node as! SKSpriteNode)
+        
+        // Ship vs Gem collision (ensure no issues here)
+        if firstBody.categoryBitMask & PhysicsCategory.Gem != 0 && secondBody.categoryBitMask & PhysicsCategory.Ship != 0 {
+            if let gem = firstBody.node as? SKSpriteNode {
+                gem.removeFromParent() // Remove gem
+
+                // Increase score
+                score += 3
+                self.lblScore?.text = "Score: \(score)" // Update score label
+            }
         }
     }
 
@@ -242,21 +290,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     // Function to move the ship to a specific point
-    func moveShip(toPoint pos: CGPoint){
-        let actionMove = SKAction.move(to: CGPoint(x: pos.x ,y: (sportNode?.position.y)!), duration: TimeInterval(2.0)) // Move ship to the target
-        sportNode?.run(SKAction.sequence([actionMove])) // Execute the move action
+    func moveShip(toPoint pos: CGPoint) {
+        let actionMove = SKAction.move(to: CGPoint(x: pos.x, y: sportNode!.position.y), duration: 0.2) // Move the ship smoothly to the new x-position
+        sportNode?.run(actionMove) // Apply the move action to the ship
     }
 
     // Handle touch down event
-    func touchDown(atPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.green
-            self.addChild(n) // Add a visual feedback node
-        }
-        moveShip(toPoint: pos) // Move the ship
+    func touchDown(atPoint pos: CGPoint) {
+        moveShip(toPoint: pos) // Move the spaceship to the touched position
     }
-    
+
     // Handle touch moved event
     func touchMoved(toPoint pos : CGPoint) {
         if let n = self.spinnyNode?.copy() as! SKShapeNode? {
@@ -266,7 +309,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         moveShip(toPoint: pos) // Move the ship
     }
-    
+
     // Handle touch up event
     func touchUp(atPoint pos : CGPoint) {
         if let n = self.spinnyNode?.copy() as! SKShapeNode? {
