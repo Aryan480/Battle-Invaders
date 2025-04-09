@@ -85,19 +85,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             label.run(SKAction.fadeIn(withDuration: 2.0)) // Fade it in over 2 seconds
         }
 
-        // Create a shape node for interaction feedback
-        let w = (self.size.width + self.size.height) * 0.05 // Width based on scene size
-        self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.3) // Create a square with rounded corners
-
-        // If spinnyNode is initialized, set its properties and add animation
-        if let spinnyNode = self.spinnyNode {
-            spinnyNode.lineWidth = 2.5 // Set the border width
-            spinnyNode.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 1))) // Spin it continuously
-            spinnyNode.run(SKAction.sequence([SKAction.wait(forDuration: 0.5),
-                                              SKAction.fadeOut(withDuration: 0.5), // Fade out
-                                              SKAction.removeFromParent()])) // Remove it after fading
-        }
-
         // Create the player’s ship sprite (sportNode)
         sportNode = SKSpriteNode(imageNamed: "ship.png")
         sportNode?.position = CGPoint(x: frame.size.width / 2, y: 100) // Place the ship at a starting position (centered horizontally)
@@ -115,7 +102,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // Add actions to spawn gems and aliens
         run(SKAction.repeatForever(SKAction.sequence([SKAction.run(addGem5thObject), SKAction.wait(forDuration: 2.0)]))) // Add a gem every 2 seconds
-        run(SKAction.repeatForever(SKAction.sequence([SKAction.run(addAlien), SKAction.wait(forDuration: 0.5)]))) // Add an alien every 0.5 seconds
+        run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.run {
+                let slowDownDuration = self.random(min: CGFloat(3.0), max: CGFloat(5.0)) // Randomize alien speed
+                self.addAlien(slowDownDuration: slowDownDuration) // Call addAlien with the new duration
+            },
+            SKAction.wait(forDuration: 1.5) // Wait for 1.5 seconds before spawning the next alien
+        ]))) // Add an alien every 1.5 seconds
 
         // Set up score, timer, and high score UI labels
         self.lblTime = self.childNode(withName: "//timerCount") as? SKLabelNode
@@ -123,6 +116,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.lblHigh = self.childNode(withName: "//highScore") as? SKLabelNode
         timerCount = timeInt // Initialize timer count to the game duration
         startCounter() // Start the countdown timer
+
+        // Set the high score label to the stored high score
+        self.lblHigh?.text = "High Score: \(highScore)"
     }
     
     // Function to increment bad guy count and add a gem
@@ -142,35 +138,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     // Function to spawn an alien sprite
-    func addAlien(){
+    func addAlien(slowDownDuration: CGFloat? = nil) {
         let alien = SKSpriteNode(imageNamed: "alien.png") // Create alien sprite
         alien.yScale = alien.yScale * -1 // Flip the alien upside down
         let actualX = random(min: alien.size.height/2, max: size.height-alien.size.height/2) // Random X position within the screen
-        alien.position = CGPoint(x: actualX, y:size.width + alien.size.width/2) // Set position outside the screen (above)
+        alien.position = CGPoint(x: actualX, y: size.width + alien.size.width/2) // Set position outside the screen (above)
         addChild(alien) // Add the alien to the scene
-        
+
         // Set up alien physics
         alien.physicsBody = SKPhysicsBody(rectangleOf: alien.size) // Create physics body for alien
-        alien.physicsBody?.isDynamic = true; // Enable physics simulation
+        alien.physicsBody?.isDynamic = true // Enable physics simulation
         alien.physicsBody?.categoryBitMask = PhysicsCategory.Alien // Set the category to Alien
         alien.physicsBody?.contactTestBitMask = PhysicsCategory.Ship // Detect collision with the ship
         alien.physicsBody?.collisionBitMask = PhysicsCategory.None // No collision with other objects
-        
-        // Randomize the movement duration of the alien
-        let actualDuration = random(min: CGFloat(2.0), max:CGFloat(4.0))
+
+        // If a slowDownDuration is provided, use it for the alien's movement duration
+        let actualDuration = slowDownDuration ?? random(min: CGFloat(2.0), max: CGFloat(4.0)) // Randomize alien speed
         let actionMove = SKAction.move(to: CGPoint(x: actualX , y: -alien.size.width/2), duration: TimeInterval(actualDuration)) // Move alien downwards
         let actionMoveDone = SKAction.removeFromParent() // Remove alien when it reaches the bottom
         alien.run(SKAction.sequence([actionMove, actionMoveDone])) // Run the move action
     }
 
-    // Function to spawn a gem sprite
-    func addGem5thObject(){
+    // Function to spawn a gem with random movement duration
+    func addGem5thObject() {
         let gem = SKSpriteNode(imageNamed: "gem.png") // Create gem sprite
         gem.yScale = gem.yScale // Scale the gem sprite
-        let actualX = random(min: gem.size.height/2, max: size.height-gem.size.height/2) // Random X position for gem
-        gem.position = CGPoint(x: actualX, y:size.width + gem.size.width/2) // Set gem position above the screen
+        let actualX = random(min: gem.size.height/2, max: size.height - gem.size.height/2) // Random X position for gem
+        gem.position = CGPoint(x: actualX, y: size.width + gem.size.width/2) // Set gem position above the screen
         addChild(gem) // Add gem to the scene
-        
+
         // Set up gem physics
         gem.physicsBody = SKPhysicsBody(rectangleOf: gem.size) // Create physics body for gem
         gem.physicsBody?.isDynamic = true; // Enable physics simulation
@@ -178,63 +174,63 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gem.physicsBody?.contactTestBitMask = PhysicsCategory.Ship // Detect collision with the ship
         gem.physicsBody?.collisionBitMask = PhysicsCategory.None // No collision with other objects
         gem.physicsBody?.usesPreciseCollisionDetection = true; // Use precise collision detection
-        
+
         // Randomize the movement duration of the gem
-        let actualDuration = random(min: CGFloat(2.0), max:CGFloat(4.0))
+        let actualDuration = random(min: CGFloat(2.0), max: CGFloat(4.0))
         let actionMove = SKAction.move(to: CGPoint(x: actualX , y: -gem.size.width/2), duration: TimeInterval(actualDuration)) // Move gem downwards
         let actionMoveDone = SKAction.removeFromParent() // Remove gem when it reaches the bottom
         gem.run(SKAction.sequence([actionMove, actionMoveDone])) // Run the move action
 
         // Add a bad alien every 5th gem
-        if badGuyCount % 5 == 0{
+        if badGuyCount % 5 == 0 {
             badAlien() // Add a bad alien
         }
     }
 
     // Handle collision between ship and alien (no specific action here yet)
-    func shipCollideAlien(ship: SKSpriteNode, alien: SKSpriteNode){
+    func shipCollideAlien(ship: SKSpriteNode, alien: SKSpriteNode) {
         print("alien") // Log that a collision with an alien occurred
     }
 
     // Handle collision between ship and gem (increase score)
-    func shipCollideGem(ship: SKSpriteNode, gem: SKSpriteNode){
+    func shipCollideGem(ship: SKSpriteNode, gem: SKSpriteNode) {
         score = score + scoreInc // Increase score by scoreInc
         hScore = score // Set high score to current score
         self.lblScore?.text = "Score: \(score)" // Update score label
         let score = self.lblScore
         score?.alpha = 0.0
         score?.run(SKAction.fadeIn(withDuration: 2.0)) // Fade in the score label
-        
+
         print("gem") // Log that a gem was collected
-        
+
         self.lblHigh?.text = "High Score: \(hScore)" // Update high score label
-        if let hScore = self.lblHigh{
+        if let hScore = self.lblHigh {
             hScore.alpha = 0.0
             hScore.run(SKAction.fadeIn(withDuration: 2.0)) // Fade in the high score label
         }
     }
     
-    // Function to shoot a bullet
+    // Function to shoot a bullet from the spaceship (sportNode)
     func shootBullet() {
         let bullet = Bullett() // Create a new bullet
-        bullet.position = sportNode!.position // Bullet starts at the ship's position
+        bullet.position = CGPoint(x: sportNode!.position.x, y: sportNode!.position.y + (sportNode!.size.height / 2)) // Bullet starts from the top of the spaceship
         
         // Add physics to the bullet for collision detection
-        bullet.physicsBody = SKPhysicsBody(rectangleOf: bullet.size) // Set physics body for the bullet
+        bullet.physicsBody = SKPhysicsBody(rectangleOf: bullet.size)
         bullet.physicsBody?.isDynamic = true
-        bullet.physicsBody?.categoryBitMask = PhysicsCategory.None // Not colliding with anything except aliens
-        bullet.physicsBody?.contactTestBitMask = PhysicsCategory.Alien // Bullet will collide with aliens
-        bullet.physicsBody?.collisionBitMask = PhysicsCategory.None // No collision with other objects
+        bullet.physicsBody?.categoryBitMask = PhysicsCategory.Bullet
+        bullet.physicsBody?.contactTestBitMask = PhysicsCategory.Alien
+        bullet.physicsBody?.collisionBitMask = PhysicsCategory.None
         
         addChild(bullet) // Add the bullet to the scene
         
         // Move the bullet upwards and remove it when it goes off-screen
         let moveUp = SKAction.moveBy(x: 0, y: self.size.height, duration: 2.0) // Move bullet up
-        let removeBullet = SKAction.removeFromParent() // Remove bullet from the scene
+        let removeBullet = SKAction.removeFromParent() // Remove bullet from the scene when it’s done
         bullet.run(SKAction.sequence([moveUp, removeBullet])) // Execute the movement and removal
     }
 
-    // Detect collisions between different objects
+    // Detect collisions between bullet and alien or ship and gem
     func didBegin(_ contact: SKPhysicsContact) {
         var firstBody : SKPhysicsBody
         var secondBody : SKPhysicsBody
@@ -248,24 +244,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             secondBody = contact.bodyA
         }
 
-        // Bullet vs Alien collision
+        // Bullet vs Alien collision (award 1 point and slow down the alien)
         if firstBody.categoryBitMask & PhysicsCategory.Alien != 0 && secondBody.categoryBitMask & PhysicsCategory.Bullet != 0 {
-            if let alien = firstBody.node as? SKSpriteNode, let bullet = secondBody.node as? Bullet {
+            if let alien = firstBody.node as? SKSpriteNode, let bullet = secondBody.node as? Bullett {
                 bullet.removeFromParent() // Remove bullet
                 alien.removeFromParent() // Remove alien
 
-                // Increase score
+                // Increase score by 1 for hitting an alien
                 score += 1
                 self.lblScore?.text = "Score: \(score)" // Update score label
+
+                // Slow down the alien ship (by increasing the movement time)
+                let slowDownDuration = random(min: CGFloat(3.0), max: CGFloat(5.0)) // New random speed for the aliens
+                addAlien(slowDownDuration: slowDownDuration) // Spawn the alien with the new slower duration
             }
         }
         
-        // Ship vs Gem collision (ensure no issues here)
+        // Ship vs Gem collision (award 3 points)
         if firstBody.categoryBitMask & PhysicsCategory.Gem != 0 && secondBody.categoryBitMask & PhysicsCategory.Ship != 0 {
             if let gem = firstBody.node as? SKSpriteNode {
                 gem.removeFromParent() // Remove gem
 
-                // Increase score
+                // Increase score by 3 for collecting a gem
                 score += 3
                 self.lblScore?.text = "Score: \(score)" // Update score label
             }
@@ -275,7 +275,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Save the high score to UserDefaults if the current score is higher
     func saveHighScore(){
         if score > highScore {
-            defaults.set(hScore, forKey: "HIGHSCORE") // Save the new high score
+            defaults.set(score, forKey: "HIGHSCORE") // Save the new high score
             defaults.synchronize() // Synchronize UserDefaults
         }
     }
@@ -295,8 +295,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         sportNode?.run(actionMove) // Apply the move action to the ship
     }
 
-    // Handle touch down event
+    // Handle touch down event to shoot a bullet
     func touchDown(atPoint pos: CGPoint) {
+        shootBullet() // Call the function to shoot a bullet when the screen is tapped
         moveShip(toPoint: pos) // Move the spaceship to the touched position
     }
 
