@@ -1,6 +1,5 @@
 //
 //  StartGameScene.swift
-//  Assignment2
 //
 //  Created by Aryan Mantrawadi on 2020-11-10.
 //  Copyright © 2020 Aryan Mantrawadi. All rights reserved.
