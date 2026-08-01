@@ -33,7 +33,7 @@
 		DC0EF9072565E24D007920D9 /* alien.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = alien.png; sourceTree = "<group>"; };
 		DC0EF9082565E24D007920D9 /* gem.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = gem.png; sourceTree = "<group>"; };
 		DC0EF9092565E24D007920D9 /* galaxy.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = galaxy.png; sourceTree = "<group>"; };
-		DCAB022825598FA5007D84E2 /* Assignment2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Assignment2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCAB022825598FA5007D84E2 /* Batter-Invaders-game.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Batter-Invaders-game.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DCAB022B25598FA5007D84E2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		DCAB022D25598FA5007D84E2 /* GameScene.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = GameScene.sks; sourceTree = "<group>"; };
 		DCAB022F25598FA5007D84E2 /* Actions.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = Actions.sks; sourceTree = "<group>"; };
@@ -74,7 +74,7 @@
 		DCAB022925598FA5007D84E2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DCAB022825598FA5007D84E2 /* Assignment2.app */,
+				DCAB022825598FA5007D84E2 /* Batter-Invaders-game.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,7 +143,7 @@
 /* Begin PBXNativeTarget section */
 		DCAB022725598FA5007D84E2 /* Assignment2 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = DCAB024025598FA7007D84E2 /* Build configuration list for PBXNativeTarget "Assignment2" */;
+			buildConfigurationList = DCAB024025598FA7007D84E2 /* Build configuration list for PBXNativeTarget "Batter-Invaders-game" */;
 			buildPhases = (
 				DCAB022425598FA5007D84E2 /* Sources */,
 				DCAB022525598FA5007D84E2 /* Frameworks */,
@@ -153,9 +153,9 @@
 			);
 			dependencies = (
 			);
-			name = Assignment2;
-			productName = Assignment2;
-			productReference = DCAB022825598FA5007D84E2 /* Assignment2.app */;
+			name = "Batter-Invaders-game";
+			productName = "Batter-Invaders-game";
+			productReference = DCAB022825598FA5007D84E2 /* Batter-Invaders-game.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -173,7 +173,7 @@
 					};
 				};
 			};
-			buildConfigurationList = DCAB022325598FA5007D84E2 /* Build configuration list for PBXProject "Assignment2" */;
+			buildConfigurationList = DCAB022325598FA5007D84E2 /* Build configuration list for PBXProject "Batter-Invaders-game" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
